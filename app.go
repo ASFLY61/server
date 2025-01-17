@@ -2,9 +2,7 @@ package main
 
 import (
 	"fmt"
-	"math/rand"
 	"os"
-	"time"
 
 	"github.com/gotify/server/v2/config"
 	"github.com/gotify/server/v2/database"
@@ -30,15 +28,14 @@ func main() {
 	mode.Set(Mode)
 
 	fmt.Println("Starting Gotify version", vInfo.Version+"@"+BuildDate)
-	rand.Seed(time.Now().UnixNano())
 	conf := config.Get()
 
 	if conf.PluginsDir != "" {
-		if err := os.MkdirAll(conf.PluginsDir, 0755); err != nil {
+		if err := os.MkdirAll(conf.PluginsDir, 0o755); err != nil {
 			panic(err)
 		}
 	}
-	if err := os.MkdirAll(conf.UploadedImagesDir, 0755); err != nil {
+	if err := os.MkdirAll(conf.UploadedImagesDir, 0o755); err != nil {
 		panic(err)
 	}
 
@@ -51,5 +48,8 @@ func main() {
 	engine, closeable := router.Create(db, vInfo, conf)
 	defer closeable()
 
-	runner.Run(engine, conf)
+	if err := runner.Run(engine, conf); err != nil {
+		fmt.Println("Server error: ", err)
+		os.Exit(1)
+	}
 }
