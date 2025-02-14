@@ -1,40 +1,33 @@
-run:
-    skip-dirs:
+issues:
+    exclude-dirs:
         - plugin/example
         - plugin/testing
 
 linters:
     enable:
         - asciicheck
-        - deadcode
-        - depguard
-        - exportloopref
-        - gci
+        - copyloopvar
         - godot
         - gofmt
         - gofumpt
         - goimports
-        - golint
         - gomodguard
         - goprintffuncname
         - gosimple
         - govet
         - ineffassign
-        - interfacer
         - misspell
         - nakedret
         - nolintlint
         - sqlclosecheck
         - staticcheck
-        - structcheck
         - stylecheck
         - typecheck
         - unconvert
         - unused
-        - varcheck
         - whitespace
     disable:
-        - goerr113
+        - err113
         - errcheck
         - funlen
         - gochecknoglobals
@@ -42,9 +35,7 @@ linters:
         - goconst
         - gocyclo
         - godox
-        - gomnd
         - lll
-        - maligned
         - nestif
         - nlreturn
         - noctx

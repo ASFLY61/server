@@ -6,8 +6,8 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io/ioutil"
 	"log"
+	"os"
 	"path/filepath"
 	"plugin"
 	"strconv"
@@ -18,7 +18,7 @@ import (
 	"github.com/gotify/server/v2/auth"
 	"github.com/gotify/server/v2/model"
 	"github.com/gotify/server/v2/plugin/compat"
-	"gopkg.in/yaml.v2"
+	"gopkg.in/yaml.v3"
 )
 
 // The Database interface for encapsulating database access.
@@ -70,7 +70,7 @@ func NewManager(db Database, directory string, mux *gin.RouterGroup, notifier No
 			internalMsg := &model.Message{
 				ApplicationID: message.Message.ApplicationID,
 				Title:         message.Message.Title,
-				Priority:      message.Message.Priority,
+				Priority:      *message.Message.Priority,
 				Date:          message.Message.Date,
 				Message:       message.Message.Message,
 			}
@@ -221,12 +221,14 @@ func (m *Manager) loadPlugins(directory string) error {
 		return nil
 	}
 
-	pluginFiles, err := ioutil.ReadDir(directory)
+	pluginFiles, err := os.ReadDir(directory)
 	if err != nil {
 		return fmt.Errorf("error while reading directory %s", err)
 	}
 	for _, f := range pluginFiles {
 		pluginPath := filepath.Join(directory, "./", f.Name())
+
+		fmt.Println("Loading plugin", pluginPath)
 		pRaw, err := plugin.Open(pluginPath)
 		if err != nil {
 			return pluginFileLoadError{f.Name(), err}

@@ -1,4 +1,3 @@
-import CircularProgress from '@material-ui/core/CircularProgress';
 import Grid from '@material-ui/core/Grid';
 import Typography from '@material-ui/core/Typography';
 import React, {Component} from 'react';
@@ -11,6 +10,8 @@ import {inject, Stores} from '../inject';
 import {observable} from 'mobx';
 import ReactInfinite from 'react-infinite';
 import {IMessage} from '../types';
+import ConfirmDialog from '../common/ConfirmDialog';
+import LoadingSpinner from '../common/LoadingSpinner';
 
 type IProps = RouteComponentProps<{id: string}>;
 
@@ -22,6 +23,8 @@ interface IState {
 class Messages extends Component<IProps & Stores<'messagesStore' | 'appStore'>, IState> {
     @observable
     private heights: Record<string, number> = {};
+    @observable
+    private deleteAll = false;
 
     private static appId(props: IProps) {
         if (props === undefined) {
@@ -67,11 +70,9 @@ class Messages extends Component<IProps & Stores<'messagesStore' | 'appStore'>, 
                         <Button
                             id="refresh-all"
                             variant="contained"
-                            disabled={!hasMessages}
                             color="primary"
                             onClick={() => messagesStore.refreshByApp(appId)}
-                            style={{marginRight: 5}}
-                        >
+                            style={{marginRight: 5}}>
                             Refresh
                         </Button>
                         <Button
@@ -79,34 +80,38 @@ class Messages extends Component<IProps & Stores<'messagesStore' | 'appStore'>, 
                             variant="contained"
                             disabled={!hasMessages}
                             color="primary"
-                            onClick={() => messagesStore.removeByApp(appId)}
-                        >
+                            onClick={() => {
+                                this.deleteAll = true;
+                            }}>
                             Delete All
                         </Button>
                     </div>
-                }
-            >
-                {hasMessages ? (
+                }>
+                {!messagesStore.loaded(appId) ? (
+                    <LoadingSpinner />
+                ) : hasMessages ? (
                     <div style={{width: '100%'}} id="messages">
                         <ReactInfinite
                             key={appId}
                             useWindowAsScrollContainer
                             preloadBatchSize={window.innerHeight * 3}
-                            elementHeight={messages.map((m) => this.heights[m.id] || 1)}
-                        >
+                            elementHeight={messages.map((m) => this.heights[m.id] || 1)}>
                             {messages.map(this.renderMessage)}
                         </ReactInfinite>
 
-                        {hasMore ? (
-                            <Grid item xs={12} style={{textAlign: 'center'}}>
-                                <CircularProgress size={100} />
-                            </Grid>
-                        ) : (
-                            this.label("You've reached the end")
-                        )}
+                        {hasMore ? <LoadingSpinner /> : this.label("You've reached the end")}
                     </div>
                 ) : (
                     this.label('No messages')
+                )}
+
+                {this.deleteAll && (
+                    <ConfirmDialog
+                        title="Confirm Delete"
+                        text={'Delete all messages?'}
+                        fClose={() => (this.deleteAll = false)}
+                        fOnSubmit={() => messagesStore.removeByApp(appId)}
+                    />
                 )}
             </DefaultPage>
         );
@@ -139,6 +144,7 @@ class Messages extends Component<IProps & Stores<'messagesStore' | 'appStore'>, 
             content={message.message}
             image={message.image}
             extras={message.extras}
+            priority={message.priority}
         />
     );
 

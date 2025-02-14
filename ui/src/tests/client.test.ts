@@ -17,14 +17,15 @@ afterAll(async () => await gotify.close());
 enum Col {
     Name = 1,
     Token = 2,
-    Edit = 3,
-    Delete = 4,
+    LastSeen = 3,
+    Edit = 4,
+    Delete = 5,
 }
 
-const hasClient =
+const waitForClient =
     (name: string, row: number): (() => Promise<void>) =>
     async () => {
-        expect(await innerText(page, $table.cell(row, Col.Name))).toBe(name);
+        await waitForExists(page, $table.cell(row, Col.Name), name);
     };
 
 const updateClient =
@@ -78,10 +79,13 @@ describe('Client', () => {
         expect(await innerText(page, $table.cell(3, Col.Name))).toBe('desktop app');
     });
     it('updates client', updateClient(1, {name: 'firefox'}));
-    it('has updated client name', hasClient('firefox', 1));
+    it('has updated client name', waitForClient('firefox', 1));
     it('shows token', async () => {
         await page.click($table.cell(3, Col.Token, '.toggle-visibility'));
         expect((await innerText(page, $table.cell(3, Col.Token))).startsWith('C')).toBeTruthy();
+    });
+    it('shows last seen', async () => {
+        expect(await innerText(page, $table.cell(3, Col.LastSeen))).toBeTruthy();
     });
     it('deletes client', async () => {
         await page.click($table.cell(2, Col.Delete, '.delete'));

@@ -75,14 +75,12 @@ class Users extends Component<WithStyles<'wrapper'> & Stores<'userStore'>> {
                         id="create-user"
                         variant="contained"
                         color="primary"
-                        onClick={() => (this.createDialog = true)}
-                    >
+                        onClick={() => (this.createDialog = true)}>
                         Create User
                     </Button>
-                }
-            >
+                }>
                 <Grid item xs={12}>
-                    <Paper elevation={6}>
+                    <Paper elevation={6} style={{overflowX: 'auto'}}>
                         <Table id="user-table">
                             <TableHead>
                                 <TableRow style={{textAlign: 'center'}}>

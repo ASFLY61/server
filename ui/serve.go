@@ -1,17 +1,19 @@
 package ui
 
 import (
+	"embed"
 	"encoding/json"
+	"io/fs"
 	"net/http"
 	"strings"
 
 	"github.com/gin-contrib/gzip"
 	"github.com/gin-gonic/gin"
-	"github.com/gobuffalo/packr/v2"
 	"github.com/gotify/server/v2/model"
 )
 
-var box = packr.New("ui", "../ui/build")
+//go:embed build/*
+var box embed.FS
 
 type uiConfig struct {
 	Register bool              `json:"register"`
@@ -24,14 +26,22 @@ func Register(r *gin.Engine, version model.VersionInfo, register bool) {
 	if err != nil {
 		panic(err)
 	}
-	ui := r.Group("/", gzip.Gzip(gzip.DefaultCompression))
-	ui.GET("/", serveFile("index.html", "text/html", func(content string) string {
+
+	replaceConfig := func(content string) string {
 		return strings.Replace(content, "%CONFIG%", string(uiConfigBytes), 1)
-	}))
-	ui.GET("/index.html", serveFile("index.html", "text/html", noop))
+	}
+
+	ui := r.Group("/", gzip.Gzip(gzip.DefaultCompression))
+	ui.GET("/", serveFile("index.html", "text/html", replaceConfig))
+	ui.GET("/index.html", serveFile("index.html", "text/html", replaceConfig))
 	ui.GET("/manifest.json", serveFile("manifest.json", "application/json", noop))
 	ui.GET("/asset-manifest.json", serveFile("asset-manifest.json", "application/json", noop))
-	ui.GET("/static/*any", gin.WrapH(http.FileServer(box)))
+
+	subBox, err := fs.Sub(box, "build")
+	if err != nil {
+		panic(err)
+	}
+	ui.GET("/static/*any", gin.WrapH(http.FileServer(http.FS(subBox))))
 }
 
 func noop(s string) string {
@@ -39,11 +49,11 @@ func noop(s string) string {
 }
 
 func serveFile(name, contentType string, convert func(string) string) gin.HandlerFunc {
-	content, err := box.FindString(name)
+	content, err := box.ReadFile("build/" + name)
 	if err != nil {
 		panic(err)
 	}
-	converted := convert(content)
+	converted := convert(string(content))
 	return func(ctx *gin.Context) {
 		ctx.Header("Content-Type", contentType)
 		ctx.String(200, converted)

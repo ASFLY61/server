@@ -30,7 +30,7 @@ type MessageBuilder struct {
 
 // NewDBWithDefaultUser creates a new test db instance with the default user.
 func NewDBWithDefaultUser(t *testing.T) *Database {
-	db, err := database.New("sqlite3", fmt.Sprintf("file:%s?mode=memory&cache=shared", fmt.Sprint(time.Now().Unix())), "admin", "pw", 5, true)
+	db, err := database.New("sqlite3", fmt.Sprintf("file:%s?mode=memory&cache=shared", fmt.Sprint(time.Now().UnixNano())), "admin", "pw", 5, true)
 	assert.Nil(t, err)
 	assert.NotNil(t, db)
 	return &Database{GormDatabase: db, t: t}
@@ -38,7 +38,7 @@ func NewDBWithDefaultUser(t *testing.T) *Database {
 
 // NewDB creates a new test db instance.
 func NewDB(t *testing.T) *Database {
-	db, err := database.New("sqlite3", fmt.Sprintf("file:%s?mode=memory&cache=shared", fmt.Sprint(time.Now().Unix())), "admin", "pw", 5, false)
+	db, err := database.New("sqlite3", fmt.Sprintf("file:%s?mode=memory&cache=shared", fmt.Sprint(time.Now().UnixNano())), "admin", "pw", 5, false)
 	assert.Nil(t, err)
 	assert.NotNil(t, db)
 	return &Database{GormDatabase: db, t: t}
@@ -136,6 +136,13 @@ func (ab *AppClientBuilder) newAppWithTokenAndName(id uint, token, name string, 
 	application := &model.Application{ID: id, UserID: ab.userID, Token: token, Name: name, Internal: internal}
 	ab.db.CreateApplication(application)
 	return application
+}
+
+// AppWithTokenAndDefaultPriority creates an application with a token and defaultPriority and returns a message builder.
+func (ab *AppClientBuilder) AppWithTokenAndDefaultPriority(id uint, token string, defaultPriority int) *MessageBuilder {
+	application := &model.Application{ID: id, UserID: ab.userID, Token: token, DefaultPriority: defaultPriority}
+	ab.db.CreateApplication(application)
+	return &MessageBuilder{db: ab.db, appID: id}
 }
 
 // Client creates a client and returns itself.
